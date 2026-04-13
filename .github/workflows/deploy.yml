@@ -1,0 +1,49 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install backend dependencies
+        run: npm install --omit=dev
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          package: .
+
+      - name: Set App Service environment variables
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          app-settings-json: |
+            [
+              { "name": "NODE_ENV",         "value": "production",                       "slotSetting": false },
+              { "name": "PORT",             "value": "8080",                             "slotSetting": false },
+              { "name": "DATABASE_URL",     "value": "${{ secrets.DATABASE_URL }}",      "slotSetting": false },
+              { "name": "CLERK_SECRET_KEY", "value": "${{ secrets.CLERK_SECRET_KEY }}",  "slotSetting": false }
+            ]
