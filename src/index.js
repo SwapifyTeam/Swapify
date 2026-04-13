@@ -34,15 +34,14 @@ app.get('/health', async (req, res) => {
 });
 
 async function start() {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
   try {
     await pool.query('SELECT 1');
     console.log('Database connected');
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
   } catch (err) {
-    console.error('Failed to connect to database:', err.message);
-    process.exit(1);
+    console.error('Database connection warning:', err.message);
   }
 }
 
