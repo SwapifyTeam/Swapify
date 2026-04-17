@@ -47,13 +47,14 @@ function PaymentPanel({ listing }) {
         transactionId,
         totalPrice,
         onlineAmount,
+        listingId: listing.id,
       })
 
       const { approvalUrl, cashShortfall: shortfall, paymentId, paypalOrderId } = payRes.data
 
       if (approvalUrl) {
         // Store paymentId and paypalOrderId for capture on return
-        sessionStorage.setItem('swapify_payment', JSON.stringify({ paymentId, paypalOrderId, transactionId }))
+        sessionStorage.setItem('swapify_payment', JSON.stringify({ paymentId, paypalOrderId, transactionId, listingId: listing.id }))
         window.location.href = approvalUrl
       } else {
         // Cash only — no PayPal needed
@@ -238,7 +239,7 @@ export default function ListingDetail() {
     ? 'Trade only'
     : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
 
-  const isBuyer = isSignedIn && seller_id !== userId && !isAdmin
+  const isBuyer = isSignedIn && seller_id !== userId
   const isForSale = type === 'sale' || type === 'both'
 
   return (
