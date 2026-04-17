@@ -23,7 +23,7 @@ const ALLOWED_ORIGINS = [
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 
-app.use(cors({
+const corsOptions = {
   origin(origin, callback) {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
@@ -33,8 +33,13 @@ app.use(cors({
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/users', usersRouter);
