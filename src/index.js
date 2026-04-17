@@ -6,12 +6,14 @@ const pool = require('./config/db');
 const usersRouter = require('./routes/users');
 const listingsRouter = require('./routes/listings');
 const pricesRouter = require('./routes/prices');
+const slotsRoutes = require("./routes/slots");
+const bookingsRoutes = require("./routes/bookings");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5174',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
 }));
 app.use(express.json());
@@ -19,6 +21,8 @@ app.use(express.json());
 app.use('/api/users', usersRouter);
 app.use('/api/listings', listingsRouter);
 app.use('/api/prices', pricesRouter);
+app.use("/api/slots", slotsRoutes);
+app.use("/api/bookings", bookingsRoutes);
 
 app.get('/health', async (req, res) => {
   try {
