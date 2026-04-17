@@ -8,6 +8,7 @@ const listingsRouter = require('./routes/listings');
 const pricesRouter = require('./routes/prices');
 const facilityConfigRouter = require('./routes/facilityConfig');
 const paymentsRouter = require('./routes/payments');
+const transactionsRouter = require('./routes/transactions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,6 +40,7 @@ app.use('/api/listings', listingsRouter);
 app.use('/api/prices', pricesRouter);
 app.use('/api/facility-config', facilityConfigRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/transactions', transactionsRouter);
 
 app.get('/health', async (req, res) => {
   try {
