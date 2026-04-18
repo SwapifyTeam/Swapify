@@ -2,17 +2,23 @@ const paymentModel = require('../models/payment');
 const pool = require('../config/db');
 const crypto = require('crypto');
 
+function requireEnv(name) {
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing required environment variable: ${name}`);
+  return val;
+}
+
 const SANDBOX = process.env.PAYFAST_SANDBOX !== 'false';
 const PAYFAST_HOST = SANDBOX ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
 
 const PF = {
-  merchant_id:  process.env.PAYFAST_MERCHANT_ID  || '10000100',
-  merchant_key: process.env.PAYFAST_MERCHANT_KEY || '46f0cd694581a',
-  passphrase:   process.env.PAYFAST_PASSPHRASE   || '',
+  merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
+  merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
+  passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
 };
 
-const BACKEND_URL  = process.env.BACKEND_URL  || 'https://swapify-backend.azurewebsites.net';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://swapify-frontend-b2h7gvfhhgaka6d7.austriaeast-01.azurewebsites.net';
+const BACKEND_URL  = requireEnv('BACKEND_URL');
+const FRONTEND_URL = requireEnv('FRONTEND_URL');
 
 function generateSignature(data, passphrase = '') {
   let str = Object.entries(data)

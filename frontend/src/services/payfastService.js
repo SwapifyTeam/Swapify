@@ -1,10 +1,13 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://swapify-backend.azurewebsites.net';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-export async function initiatePayFastPayment({ listingId, amount, itemName, itemDescription, nameFirst, nameLast, email }) {
+export async function initiatePayFastPayment({ transactionId, listingId, amount, itemName, itemDescription, nameFirst, nameLast, email }, token) {
   const res = await fetch(`${BACKEND_URL}/api/payfast/initiate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ listingId, amount, itemName, itemDescription, nameFirst, nameLast, email }),
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({ transactionId, listingId, amount, itemName, itemDescription, nameFirst, nameLast, email }),
   });
   if (!res.ok) throw new Error('Failed to initiate PayFast payment');
   return res.json();

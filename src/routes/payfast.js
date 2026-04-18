@@ -2,18 +2,26 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const https = require('https');
+const auth = require('../middleware/auth');
+const payment = require('../models/payment');
+
+function requireEnv(name) {
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing required environment variable: ${name}`);
+  return val;
+}
 
 const SANDBOX = process.env.PAYFAST_SANDBOX !== 'false';
 const PAYFAST_HOST = SANDBOX ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
 
 const PF = {
-  merchant_id:  process.env.PAYFAST_MERCHANT_ID  || '10000100',
-  merchant_key: process.env.PAYFAST_MERCHANT_KEY || '46f0cd694581a',
-  passphrase:   process.env.PAYFAST_PASSPHRASE   || '',
+  merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
+  merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
+  passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
 };
 
-const BACKEND_URL  = process.env.BACKEND_URL  || 'https://swapify-backend.azurewebsites.net';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://swapify-frontend-b2h7gvfhhgaka6d7.austriaeast-01.azurewebsites.net';
+const BACKEND_URL  = requireEnv('BACKEND_URL');
+const FRONTEND_URL = requireEnv('FRONTEND_URL');
 
 function generateSignature(data, passphrase = '') {
   let str = Object.entries(data)
@@ -49,12 +57,14 @@ function validateWithPayFast(postData) {
   });
 }
 
-router.post('/initiate', async (req, res) => {
+router.post('/initiate', auth, async (req, res) => {
   try {
-    const { listingId, amount, itemName, itemDescription = '', nameFirst = '', nameLast = '', email = '' } = req.body;
-    if (!listingId || !amount || !itemName) return res.status(400).json({ error: 'listingId, amount, itemName required' });
+    const { transactionId, listingId, amount, itemName, itemDescription = '', nameFirst = '', nameLast = '', email = '' } = req.body;
+    if (!transactionId || !listingId || !amount || !itemName) return res.status(400).json({ error: 'transactionId, listingId, amount, itemName required' });
 
-    const m_payment_id = `swapify-${listingId}-${Date.now()}`;
+    const total = Number(amount);
+    const record = await payment.create({ transactionId, amount: total, onlineAmount: total, cashShortfall: 0 });
+    const m_payment_id = `swapify-${listingId}-${record.id}`;
 
     const paymentData = {
       merchant_id:      PF.merchant_id,
@@ -66,7 +76,7 @@ router.post('/initiate', async (req, res) => {
       name_last:        nameLast,
       email_address:    email,
       m_payment_id,
-      amount:           Number(amount).toFixed(2),
+      amount:           total.toFixed(2),
       item_name:        itemName,
       item_description: itemDescription,
     };
@@ -82,6 +92,7 @@ router.post('/initiate', async (req, res) => {
 });
 
 router.post('/notify', express.urlencoded({ extended: false }), async (req, res) => {
+  let paymentId;
   try {
     const data = req.body;
     if (!verifyITNSignature(data, PF.passphrase)) return res.status(400).send('Signature mismatch');
@@ -90,15 +101,16 @@ router.post('/notify', express.urlencoded({ extended: false }), async (req, res)
     if (valid !== 'VALID') return res.status(400).send('ITN invalid');
 
     const { payment_status, m_payment_id, pf_payment_id } = data;
-    const listingId = m_payment_id?.split('-')[1];
+    paymentId = m_payment_id?.split('-')[2];
 
-    if (payment_status === 'COMPLETE') {
-      console.log(`[PayFast] COMPLETE listing=${listingId} pf_id=${pf_payment_id}`);
+    if (payment_status === 'COMPLETE' && paymentId) {
+      await payment.markPaid(paymentId, pf_payment_id);
     }
 
     return res.sendStatus(200);
   } catch (err) {
     console.error('[PayFast] ITN error:', err);
+    if (paymentId) await payment.markFailed(paymentId).catch(() => {});
     return res.status(500).send('Error');
   }
 });
