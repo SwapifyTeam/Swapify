@@ -22,12 +22,12 @@ jobs:
 
       - name: npm install and build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_CLERK_PUBLISHABLE_KEY: pk_test_c2hhcnAtamFndWFyLTI3LmNsZXJrLmFjY291bnRzLmRldiQ
-          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
+          VITE_API_URL: https://swapify-backend.azurewebsites.net/api
+          VITE_BACKEND_URL: https://swapify-backend.azurewebsites.net
         run: |
           npm install
-          npm run build --if-present
+          cd frontend && npm install && rm -rf dist node_modules/.vite && npm run build && cd ..
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
