@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useAuth, SignInButton } from '@clerk/clerk-react'
+import { useAuth, useUser, SignInButton } from '@clerk/clerk-react'
 import api from '../services/api'
 import { initiatePayFastPayment, redirectToPayFast } from '../services/payfastService'
 import useRole from '../hooks/useRole'
@@ -19,17 +19,25 @@ function PageShell({ children }) {
 function PaymentPanel({ listing }) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
+  const { getToken }          = useAuth()
+  const { user }              = useUser()
 
   async function handlePay() {
     setLoading(true)
     setError(null)
     try {
+      const token = await getToken()
+      const txRes = await api.post('/transactions', { listingId: listing.id, type: 'purchase' })
       const result = await initiatePayFastPayment({
+        transactionId:   txRes.data.id,
         listingId:       listing.id,
         amount:          listing.price,
         itemName:        listing.title,
         itemDescription: listing.description ?? '',
-      })
+        nameFirst:       user?.firstName ?? '',
+        nameLast:        user?.lastName ?? '',
+        email:           user?.emailAddresses?.[0]?.emailAddress ?? '',
+      }, token)
       redirectToPayFast(result)
     } catch (err) {
       setError('Payment failed. Please try again.')
