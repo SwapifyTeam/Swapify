@@ -1,5 +1,3 @@
-// verifyToken is a standalone export in @clerk/backend v3 — it is NOT a method
-// on the object returned by createClerkClient.
 const { createClerkClient, verifyToken } = require('@clerk/backend');
 
 const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
@@ -12,18 +10,22 @@ async function auth(req, res, next) {
 
   const token = authHeader.slice(7);
   try {
-    // verifyToken returns the JWT payload; the user ID is in `sub`, not `userId`
     const payload = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
     const userId = payload.sub;
     if (!userId) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    const clerkUser = await clerk.users.getUser(userId);
+    // Add timeout to Clerk API call
+    const clerkUser = await Promise.race([
+      clerk.users.getUser(userId),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Clerk API timeout')), 5000))
+    ]);
     req.clerkUser = clerkUser;
     req.authId = userId;
     next();
   } catch (err) {
+    console.error('Auth error:', err.message);
     return res.status(401).json({ error: 'Unauthorized', message: err.message });
   }
 }
