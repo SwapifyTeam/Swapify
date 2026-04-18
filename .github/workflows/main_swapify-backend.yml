@@ -23,7 +23,7 @@ jobs:
       - name: npm install and build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+          VITE_CLERK_PUBLISHABLE_KEY: pk_test_c2hhcnAtamFndWFyLTI3LmNsZXJrLmFjY291bnRzLmRldiQ
           VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL }}
         run: |
           npm install
