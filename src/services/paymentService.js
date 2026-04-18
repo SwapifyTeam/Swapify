@@ -8,18 +8,6 @@ function requireEnv(name) {
   return val;
 }
 
-const SANDBOX = process.env.PAYFAST_SANDBOX !== 'false';
-const PAYFAST_HOST = SANDBOX ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
-
-const PF = {
-  merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
-  merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
-  passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
-};
-
-const BACKEND_URL  = requireEnv('BACKEND_URL');
-const FRONTEND_URL = requireEnv('FRONTEND_URL');
-
 function generateSignature(data, passphrase = '') {
   let str = Object.entries(data)
     .filter(([, v]) => v !== '' && v !== null && v !== undefined)
@@ -30,6 +18,16 @@ function generateSignature(data, passphrase = '') {
 }
 
 async function initiatePayment({ transactionId, totalPrice, listingId, itemName = 'Swapify Listing', nameFirst = '', nameLast = '', email = '' }) {
+  const sandbox     = process.env.PAYFAST_SANDBOX !== 'false';
+  const PAYFAST_HOST = sandbox ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
+  const PF = {
+    merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
+    merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
+    passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
+  };
+  const BACKEND_URL  = requireEnv('BACKEND_URL');
+  const FRONTEND_URL = requireEnv('FRONTEND_URL');
+
   const total = Number(totalPrice);
   if (isNaN(total) || total <= 0) {
     const err = new Error('totalPrice must be a positive number');

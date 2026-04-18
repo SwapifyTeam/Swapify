@@ -11,17 +11,19 @@ function requireEnv(name) {
   return val;
 }
 
-const SANDBOX = process.env.PAYFAST_SANDBOX !== 'false';
-const PAYFAST_HOST = SANDBOX ? 'sandbox.payfast.co.za' : 'www.payfast.co.za';
-
-const PF = {
-  merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
-  merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
-  passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
-};
-
-const BACKEND_URL  = requireEnv('BACKEND_URL');
-const FRONTEND_URL = requireEnv('FRONTEND_URL');
+function getConfig() {
+  const sandbox = process.env.PAYFAST_SANDBOX !== 'false';
+  return {
+    PAYFAST_HOST: sandbox ? 'sandbox.payfast.co.za' : 'www.payfast.co.za',
+    PF: {
+      merchant_id:  requireEnv('PAYFAST_MERCHANT_ID'),
+      merchant_key: requireEnv('PAYFAST_MERCHANT_KEY'),
+      passphrase:   process.env.PAYFAST_PASSPHRASE ?? '',
+    },
+    BACKEND_URL:  requireEnv('BACKEND_URL'),
+    FRONTEND_URL: requireEnv('FRONTEND_URL'),
+  };
+}
 
 function generateSignature(data, passphrase = '') {
   let str = Object.entries(data)
@@ -37,13 +39,13 @@ function verifyITNSignature(data, passphrase = '') {
   return generateSignature(rest, passphrase) === signature;
 }
 
-function validateWithPayFast(postData) {
+function validateWithPayFast(postData, payfastHost) {
   return new Promise((resolve, reject) => {
     const body = Object.entries(postData)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&');
     const req = https.request({
-      hostname: PAYFAST_HOST, port: 443,
+      hostname: payfastHost, port: 443,
       path: '/eng/query/validate', method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) },
     }, (res) => {
@@ -59,6 +61,7 @@ function validateWithPayFast(postData) {
 
 router.post('/initiate', auth, async (req, res) => {
   try {
+    const { PAYFAST_HOST, PF, BACKEND_URL, FRONTEND_URL } = getConfig();
     const { transactionId, listingId, amount, itemName, itemDescription = '', nameFirst = '', nameLast = '', email = '' } = req.body;
     if (!transactionId || !listingId || !amount || !itemName) return res.status(400).json({ error: 'transactionId, listingId, amount, itemName required' });
 
@@ -94,10 +97,11 @@ router.post('/initiate', auth, async (req, res) => {
 router.post('/notify', express.urlencoded({ extended: false }), async (req, res) => {
   let paymentId;
   try {
+    const { PAYFAST_HOST, PF } = getConfig();
     const data = req.body;
     if (!verifyITNSignature(data, PF.passphrase)) return res.status(400).send('Signature mismatch');
 
-    const valid = await validateWithPayFast(data);
+    const valid = await validateWithPayFast(data, PAYFAST_HOST);
     if (valid !== 'VALID') return res.status(400).send('ITN invalid');
 
     const { payment_status, m_payment_id, pf_payment_id } = data;
