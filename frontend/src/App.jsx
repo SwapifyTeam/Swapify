@@ -9,9 +9,9 @@ import ListingDetail from './pages/ListingDetail'
 import Admin from './pages/Admin'
 import PaymentSuccess from './pages/PaymentSuccess'
 import PaymentCancel from './pages/PaymentCancel'
+import BookSlot from './pages/BookSlot'
+import MyBookings from './pages/MyBookings'
 
-// Registers Clerk's getToken with the axios instance so every
-// authenticated request automatically gets a Bearer token.
 function TokenSync() {
   const { getToken } = useAuth()
   useEffect(() => {
@@ -27,12 +27,14 @@ export default function App() {
       <TokenSync />
       <Navbar />
       <Routes>
-        <Route path="/"             element={<Home />} />
-        <Route path="/listings/new" element={<CreateListing />} />
-        <Route path="/listings/:id" element={<ListingDetail />} />
-        <Route path="/admin"        element={<Admin />} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/cancel"  element={<PaymentCancel />} />
+        <Route path="/"                   element={<Home />} />
+        <Route path="/listings/new"       element={<CreateListing />} />
+        <Route path="/listings/:id"       element={<ListingDetail />} />
+        <Route path="/admin"              element={<Admin />} />
+        <Route path="/payment/success"    element={<PaymentSuccess />} />
+        <Route path="/payment/cancel"     element={<PaymentCancel />} />
+        <Route path="/book/:trade_id"     element={<BookSlot />} />
+        <Route path="/my-bookings"        element={<MyBookings />} />
       </Routes>
     </BrowserRouter>
   )
