@@ -125,11 +125,13 @@ export default function ListingDetail() {
     }
   }
 
-  const { title, description, price, condition, type, category, images, created_at, seller_id } = listing
+  const { title, description, price, condition, type, category, images, created_at, seller_id, seller_name } = listing
   const thumbs = images ?? []
   const displayPrice = type === 'trade' ? 'Trade only' : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
   const isBuyer = isSignedIn && seller_id !== userId
   const isForSale = type === 'sale' || type === 'both'
+
+  console.log('Payment button conditions:', { isLoaded, isSignedIn, isBuyer, isForSale, returningFromPayFast, seller_id, userId })
 
   return (
     <PageShell>
@@ -168,6 +170,7 @@ export default function ListingDetail() {
             </div>
             <h2 style={{ color: 'var(--text)', fontSize: '1.4rem', marginBottom: '.25rem' }}>{title}</h2>
             <p className="detail-price">{displayPrice}</p>
+            {seller_name && <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginBottom: '.75rem' }}>Posted by {seller_name}</p>}
             {description && <p style={{ fontSize: '.925rem', lineHeight: 1.7, marginBottom: '1.25rem' }}>{description}</p>}
             <div className="stat-row">
               <div className="stat">
