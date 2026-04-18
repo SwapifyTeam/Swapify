@@ -88,6 +88,7 @@ export default function ListingDetail() {
   const [error, setError]         = useState(null)
   const [deleting, setDeleting]   = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  const [tradeId, setTradeId]     = useState(null)
 
   const urlParams = new URLSearchParams(window.location.search)
   const returningFromPayFast = urlParams.get('payfast') === 'success'
@@ -101,6 +102,16 @@ export default function ListingDetail() {
       })
       .catch(() => setError('Listing not found or unavailable.'))
       .finally(() => setLoading(false))
+  }, [id])
+
+  // Fetch existing transaction for this listing so we can link to booking
+  useEffect(() => {
+    if (!id) return
+    api.get(`/transactions?listing_id=${id}`)
+      .then(res => {
+        if (res.data && res.data.length > 0) setTradeId(res.data[0].id)
+      })
+      .catch(() => {})
   }, [id])
 
   if (loading) return <PageShell><div className="spinner" /></PageShell>
@@ -130,6 +141,7 @@ export default function ListingDetail() {
   const displayPrice = type === 'trade' ? 'Trade only' : price != null ? `R${parseFloat(price).toFixed(2)}` : '—'
   const isBuyer = isSignedIn && seller_id !== userId
   const isForSale = type === 'sale' || type === 'both'
+  const isTrade = type === 'trade' || type === 'both'
 
   return (
     <PageShell>
@@ -191,11 +203,28 @@ export default function ListingDetail() {
             <PaymentPanel listing={listing} />
           )}
 
-          {isSignedIn && isBuyer && !isForSale && (
+          {/* ── Trade slot booking card ── */}
+          {isSignedIn && isBuyer && isTrade && (
             <div className="detail-card">
               <h3 style={{ color: 'var(--text)', marginBottom: '.5rem' }}>Interested in a Trade?</h3>
-              <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>Contact the seller to arrange a trade on campus.</p>
-              <button className="btn btn-primary btn-full btn-lg">Contact Seller</button>
+              <p style={{ fontSize: '.875rem', marginBottom: '1.25rem' }}>
+                Book a campus trade slot to arrange a safe drop-off or collection.
+              </p>
+              {tradeId ? (
+                <Link
+                  to={`/book/${tradeId}`}
+                  className="btn btn-primary btn-full btn-lg"
+                >
+                  📅 Book a Trade Slot
+                </Link>
+              ) : (
+                <button
+                  className="btn btn-primary btn-full btn-lg"
+                  onClick={() => navigate(`/book/${id}`)}
+                >
+                  📅 Book a Trade Slot
+                </button>
+              )}
             </div>
           )}
 
