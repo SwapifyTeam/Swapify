@@ -32,7 +32,7 @@ router.post('/initiate', async (req, res) => {
     const { listingId, amount, itemName, itemDescription = '', nameFirst = '', nameLast = '', email = '' } = req.body;
     if (!listingId || !amount || !itemName) return res.status(400).json({ error: 'listingId, amount, itemName required' });
 
-    const m_payment_id = `swapify-${listingId}-${Date.now()}`;
+    const shortId = listingId.split('-')[0]; const m_payment_id = `sw-${shortId}-${Date.now()}`;
 
     const paymentData = {
       merchant_id:      PF.merchant_id,
