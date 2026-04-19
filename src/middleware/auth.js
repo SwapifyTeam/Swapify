@@ -8,7 +8,6 @@ async function auth(req, res, next) {
 
   const token = authHeader.slice(7);
   try {
-    // Decode without verification for now to get user ID
     const payload = jwt.decode(token);
     if (!payload || !payload.sub) {
       return res.status(401).json({ error: 'Invalid token' });

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const pool = require('./config/db');
 
 const usersRouter = require('./routes/users');
@@ -12,17 +13,17 @@ const facilityConfigRouter = require('./routes/facilityConfig');
 const paymentsRouter = require('./routes/payments');
 const payfastRouter = require('./routes/payfast');
 const transactionsRouter = require('./routes/transactions');
-
+const messageRoutes = require('./routes/messageRoutes');
+const threadRoutes = require('./routes/threadRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const path = require('path');
 
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:4173',
   'http://localhost:5174',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  "https://swapify-backend.azurewebsites.net",
 ];
 
 const corsOptions = {
@@ -42,8 +43,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use((req, res, next) => { console.log(req.method, req.path); next(); });
 
+// API routes
 app.use('/api/users', usersRouter);
 app.use('/api/listings', listingsRouter);
 app.use('/api/prices', pricesRouter);
@@ -53,7 +54,10 @@ app.use('/api/facility-config', facilityConfigRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/payfast', payfastRouter);
 app.use('/api/transactions', transactionsRouter);
-
+app.use('/api/messages', messageRoutes);
+app.use('/api/threads', threadRoutes);
+app.use('/api/admin', adminRoutes);
+// Health check
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -63,13 +67,25 @@ app.get('/health', async (req, res) => {
   }
 });
 
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.get('/{*path}', (req, res) => { res.sendFile(path.join(__dirname, '../frontend/dist/index.html')); });
+// Root route (for testing)
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
+// ✅ ONLY serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+}
 
 async function start() {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+
   try {
     await pool.query('SELECT 1');
     console.log('Database connected');

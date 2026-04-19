@@ -20,15 +20,14 @@ async function getListing(req, res) {
   }
 }
 
-async function createListing(req, res) {
+const createListing = async (req, res) => {
   try {
     const listing = await listingService.createListing(req.user.id, req.body);
     res.status(201).json(listing);
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }
-}
-
+};
 async function updateListing(req, res) {
   try {
     const listing = await listingService.updateListing(req.params.id, req.user.id, req.body);
