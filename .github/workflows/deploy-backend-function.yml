@@ -1,4 +1,4 @@
-name: Build and deploy backend Node.js app
+name: Build and deploy backend to swapify-backend
 
 on:
   push:
@@ -29,5 +29,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'swapify-api-func'
+          app-name: 'swapify-backend'
           package: .
